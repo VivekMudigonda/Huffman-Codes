@@ -52,3 +52,24 @@ struct BitWriter
         bit_pos = 0;
     }
 };
+
+struct BitReader
+{
+    const vector<uint8_t> &data;
+    int idx = 0;
+    int bit_pos = 0;
+
+    BitReader(const vector<uint8_t> &d) : data(d) {}
+
+    int read_bit()
+    {
+        int bit = (data[idx] >> (7 - bit_pos)) & 1;
+        bit_pos++;
+        if (bit_pos == 8)
+        {
+            bit_pos = 0;
+            idx++;
+        }
+        return bit;
+    }
+};
