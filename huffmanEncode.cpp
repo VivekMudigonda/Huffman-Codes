@@ -1,6 +1,7 @@
-#include <globals.h>
+#include "globals.h"
 using namespace std;
-
+unordered_map<char, string> codes;
+int lastByteLength;
 unique_ptr<TreeNode> generateTree(string &s)
 {
     int n = s.size(), value;
@@ -60,4 +61,38 @@ unique_ptr<TreeNode> generateTree(string &s)
     auto res = move(q2.front());
     q2.pop();
     return res;
+}
+
+void buildCode(const unique_ptr<TreeNode> &root, string &cur)
+{
+    if (!root)
+        return;
+
+    if (!root->left && !root->right)
+    {
+        codes[root->x] = cur.empty() ? "0" : cur;
+        return;
+    }
+
+    cur.push_back('0');
+    buildCode(root->left, cur);
+    cur.back() = '1';
+    buildCode(root->right, cur);
+    cur.pop_back();
+}
+
+vector<uint8_t> getEncode(const string &s)
+{
+    BitWriter bw;
+
+    for (char ch : s)
+    {
+        for (char bit : codes[ch])
+        {
+            bw.bit_push(bit == '1');
+        }
+    }
+    lastByteLength = (bw.bit_pos == 0 ? 8 : bw.bit_pos);
+    bw.flush();
+    return bw.data;
 }
