@@ -73,7 +73,6 @@ void buildCode(const unique_ptr<TreeNode> &root, string &cur)
         codes[root->x] = cur.empty() ? "0" : cur;
         return;
     }
-
     cur.push_back('0');
     buildCode(root->left, cur);
     cur.back() = '1';
