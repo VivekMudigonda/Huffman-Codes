@@ -1,7 +1,7 @@
+#pragma once
 #include <bits/stdc++.h>
 using namespace std;
 
-extern unordered_map<char, string> codes;
 extern int lastByteLength;
 struct TreeNode
 {

@@ -1,6 +1,5 @@
-#include "globals.h"
-using namespace std;
-unordered_map<char, string> codes;
+#include "huffmanEncode.h"
+
 int lastByteLength;
 unique_ptr<TreeNode> generateTree(string &s)
 {
@@ -9,7 +8,7 @@ unique_ptr<TreeNode> generateTree(string &s)
         return nullptr;
     vector<unique_ptr<TreeNode>> x(2);
     vector<pair<int, int>> a;
-    vector<int> freq(128, 0);
+    vector<int> freq(256, 0);
     for (int i = 0; i < n; i++)
     {
         freq[s[i]]++;
@@ -63,7 +62,7 @@ unique_ptr<TreeNode> generateTree(string &s)
     return res;
 }
 
-void buildCode(const unique_ptr<TreeNode> &root, string &cur)
+void buildCode(const unique_ptr<TreeNode> &root, string &cur, unordered_map<char, string> &codes)
 {
     if (!root)
         return;
@@ -74,13 +73,13 @@ void buildCode(const unique_ptr<TreeNode> &root, string &cur)
         return;
     }
     cur.push_back('0');
-    buildCode(root->left, cur);
+    buildCode(root->left, cur, codes);
     cur.back() = '1';
-    buildCode(root->right, cur);
+    buildCode(root->right, cur, codes);
     cur.pop_back();
 }
 
-vector<uint8_t> getEncode(const string &s)
+vector<uint8_t> getEncode(const string &s, unordered_map<char, string> &codes)
 {
     BitWriter bw;
 
@@ -94,4 +93,43 @@ vector<uint8_t> getEncode(const string &s)
     lastByteLength = (bw.bit_pos == 0 ? 8 : bw.bit_pos);
     bw.flush();
     return bw.data;
+}
+
+void buildCanonicalEncode(const unique_ptr<TreeNode> &root, vector<pair<int, char>> &symbols, int &depth)
+{
+    if (!root)
+        return;
+
+    if (!root->left && !root->right)
+    {
+        symbols.push_back(make_pair(depth, root->x));
+    }
+    depth++;
+    buildCanonicalEncode(root->left, symbols, depth);
+    buildCanonicalEncode(root->right, symbols, depth);
+    depth--;
+    return;
+}
+
+void buildCanonicalCodes(const vector<pair<int, char>> &symbols, unordered_map<char, vector<uint8_t>> &canonicalCodes)
+{
+    vector<pair<int, char>> sorted = symbols;
+    sort(sorted.begin(), sorted.end());
+
+    uint32_t code = 0;
+    int prevLen = 0;
+
+    for (auto &[len, ch] : sorted)
+    {
+        code <<= (len - prevLen);
+
+        vector<uint8_t> bits(len);
+        for (int i = 0; i < len; i++)
+            bits[len - 1 - i] = static_cast<uint8_t>((code >> i) & 1);
+
+        canonicalCodes[ch] = std::move(bits);
+
+        code++;
+        prevLen = len;
+    }
 }
